@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All-Rounder AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>All-Rounder AI</h1>
+    </header>
+
+    <!-- Chat message area -->
+    <main class="chat-area" id="chatArea">
+      <div class="message ai-message">
+        <div class="bubble ai-bubble">
+          Hi! I'm All-Rounder AI. Ask me anything to test the connection.
+        </div>
+      </div>
+    </main>
+
+    <!-- Loading indicator -->
+    <div class="loading-indicator" id="loadingIndicator">
+      <span></span><span></span><span></span>
+    </div>
+
+    <!-- Input area -->
+    <footer class="input-area">
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Type your message..."
+        autocomplete="off"
+      />
+      <button id="sendButton">Send</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
