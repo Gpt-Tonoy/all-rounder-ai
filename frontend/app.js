@@ -1,11 +1,11 @@
 // ---------------------------------------------------------
-// All-Rounder AI - Frontend Logic (Phase 1)
+// All-Rounder AI - Frontend Logic
+// GitHub Pages → Cloudflare Worker → Workers AI
 // ---------------------------------------------------------
 
-// Backend API base URL.
-// During local development the backend runs on port 3000.
-// When deployed, replace this with your hosted backend URL.
-const API_BASE_URL = "http://localhost:3000";
+// Cloudflare Worker API
+const API_BASE_URL =
+  "https://all-rounder-ai.tonoygpt.workers.dev";
 
 const chatArea = document.getElementById("chatArea");
 const messageInput = document.getElementById("messageInput");
@@ -24,19 +24,21 @@ function addMessage(text, sender) {
   messageDiv.appendChild(bubble);
   chatArea.appendChild(messageDiv);
 
-  // Auto-scroll to the latest message
+  // Auto-scroll to latest message
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
+// Loading state
 function setLoading(isLoading) {
   loadingIndicator.classList.toggle("active", isLoading);
   sendButton.disabled = isLoading;
 }
 
-// Sends the user's message to the backend and displays the response
+// Sends message to Cloudflare Worker
 async function sendMessage() {
   const text = messageInput.value.trim();
-  if (!text) return;
+
+  if (!text || sendButton.disabled) return;
 
   addMessage(text, "user");
   messageInput.value = "";
@@ -45,33 +47,50 @@ async function sendMessage() {
   try {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: text,
+      }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Server responded with status ${response.status}`);
+      throw new Error(
+        data?.error ||
+        `Server responded with status ${response.status}`
+      );
     }
 
-    const data = await response.json();
-    const aiText = data.message || "No response received.";
+    const aiText =
+      data?.message ||
+      "No response received.";
+
     addMessage(aiText, "ai");
+
   } catch (error) {
+    console.error("Chat request failed:", error);
+
     addMessage(
-      "⚠️ Could not reach the backend. Please make sure the server is running.",
+      "⚠️ AI request failed. Please try again.",
       "ai"
     );
-    console.error("Chat request failed:", error);
+
   } finally {
     setLoading(false);
+    messageInput.focus();
   }
 }
 
-// Event listeners
+// Send button
 sendButton.addEventListener("click", sendMessage);
 
+// Enter key
 messageInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
     sendMessage();
   }
 });
