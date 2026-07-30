@@ -5,7 +5,7 @@
 
 // Cloudflare Worker API
 const API_BASE_URL =
-  "https://all-rounder-ai.tonoygpt.workers.dev";
+  "https://all-rounder-ai-v2.tonoygpt.workers.dev";
 
 const chatArea = document.getElementById("chatArea");
 const messageInput = document.getElementById("messageInput");
