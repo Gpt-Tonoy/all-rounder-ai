@@ -1,14 +1,21 @@
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
+// =========================================
+// All-Rounder AI Assistant v1
+// Main Worker
+// =========================================
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import { APP_NAME, VERSION } from "./config.js";
+import { CORS, json } from "./cors.js";
+import { classifyTask } from "./router.js";
+import { getSystemPrompt } from "./prompts.js";
+import { buildMessages } from "./memory.js";
+import { runTools } from "./tools.js";
+import { askAI } from "./ai.js";
 
 export default {
+
   async fetch(request, env) {
-    // CORS Preflight
+
+    // CORS
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: CORS,
@@ -19,67 +26,71 @@ export default {
 
     // Health Check
     if (request.method === "GET" && url.pathname === "/") {
-      return Response.json(
-        {
-          success: true,
-          name: "All-Rounder AI Assistant",
-          version: "v1",
-          status: "online",
-          message: "Worker is running successfully."
-        },
-        {
-          headers: CORS,
-        }
-      );
+
+      return json({
+        success: true,
+        name: APP_NAME,
+        version: VERSION,
+        status: "online",
+        message: "Worker is running successfully."
+      });
+
     }
 
-    // Chat Endpoint
+    // Chat API
     if (request.method === "POST" && url.pathname === "/api/chat") {
+
       try {
+
         const body = await request.json();
+
         const message = body.message || "";
 
-        const ai = await env.AI.run(MODEL, {
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are All-Rounder AI Assistant v1. Answer clearly, accurately, and concisely."
-            },
-            {
-              role: "user",
-              content: message
-            }
-          ]
+        // Router
+        const task = classifyTask(message);
+
+        // Prompt
+        const systemPrompt = getSystemPrompt(task);
+
+        // Tools
+        const tool = runTools(message);
+
+        if (tool.handled) {
+          return json({
+            success: true,
+            provider: "tool",
+            reply: tool.message
+          });
+        }
+
+        // Memory
+        const messages = buildMessages(systemPrompt, message);
+
+        // AI
+        const reply = await askAI(env, messages);
+
+        return json({
+          success: true,
+          task,
+          reply
         });
 
-        return Response.json(
-          {
-            success: true,
-            model: MODEL,
-            reply: ai.response || ai.result || ai
-          },
-          {
-            headers: CORS,
-          }
-        );
       } catch (err) {
-        return Response.json(
-          {
-            success: false,
-            error: err.message
-          },
-          {
-            status: 500,
-            headers: CORS,
-          }
-        );
+
+        return json({
+          success: false,
+          error: err.message
+        }, 500);
+
       }
+
     }
 
-    return new Response("Not Found", {
-      status: 404,
-      headers: CORS,
-    });
-  },
+    return json({
+      success: false,
+      error: "Not Found"
+    }, 404);
+
+  }
+
 };
