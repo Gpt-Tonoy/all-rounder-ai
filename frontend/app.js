@@ -7,6 +7,9 @@
 const API_BASE_URL =
   "https://all-rounder-ai-v2.tonoygpt.workers.dev";
 
+let chatHistory = [];
+
+
 const chatArea = document.getElementById("chatArea");
 const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
@@ -52,7 +55,8 @@ async function sendMessage() {
       },
       body: JSON.stringify({
         message: text,
-      }),
+        history: chatHistory,
+      
     });
 
     const data = await response.json();
@@ -67,6 +71,20 @@ async function sendMessage() {
     const aiText =
       data?.message ||
       "No response received.";
+
+    chatHistory.push({
+  role: "user",
+  content: text
+});
+
+chatHistory.push({
+  role: "assistant",
+  content: aiText
+});
+
+if (chatHistory.length > 20) {
+  chatHistory = chatHistory.slice(-20);
+}
 
     addMessage(aiText, "ai");
 
