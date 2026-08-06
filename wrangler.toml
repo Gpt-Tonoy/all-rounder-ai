@@ -1,0 +1,6 @@
+name = "all-rounder-ai-v3"
+main = "worker/worker.js"
+compatibility_date = "2026-08-06"
+
+[ai]
+binding = "AI"
