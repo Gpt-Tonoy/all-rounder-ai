@@ -7,4 +7,4 @@ binding = "AI"
 
 [[kv_namespaces]]
 binding = "CHAT_MEMORY"
-id = "your_kv_namespace_id_here"
+id = "fea24e81b42a455d9f21fba02ca34107"
