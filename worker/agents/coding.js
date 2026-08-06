@@ -48,13 +48,15 @@ export async function runCodingAgent(env, { path, instructions }) {
 // Multi-file Coding Agent
 // -----------------------------------------
 
-async function planFiles(env, projectDescription) {
+const PLANNER_BASE_PROMPT =
+  'You are a software planner. Given a project description, output ONLY a JSON array of file plans. Each item must have "path" (string, relative repo path) and "instructions" (string, a CONCISE 1-2 sentence instruction for that specific file — do not write long detailed instructions, keep the whole JSON short). ONLY plan text-based code files (.html, .css, .js, .json, .md). NEVER plan binary/image files (.png, .jpg, .ico, .svg, .gif, .mp3, .wav) — if icons or graphics are needed, instruct the file to use CSS shapes, unicode/emoji characters, or inline SVG markup instead. No explanations, no markdown fences, just raw JSON. Keep it to 2-5 files.';
+
+async function requestPlan(env, projectDescription, extraNote = "") {
 
   const messages = [
     {
       role: "system",
-      content:
-        'You are a software planner. Given a project description, output ONLY a JSON array of file plans. Each item must have "path" (string, relative repo path) and "instructions" (string, detailed instructions for that specific file). ONLY plan text-based code files (.html, .css, .js, .json, .md). NEVER plan binary/image files (.png, .jpg, .ico, .svg, .gif, .mp3, .wav) — if icons or graphics are needed, instruct the file to use CSS shapes, unicode/emoji characters, or inline SVG markup instead. No explanations, no markdown fences, just raw JSON. Keep it to 2-5 files.',
+      content: PLANNER_BASE_PROMPT + extraNote,
     },
     {
       role: "user",
@@ -62,15 +64,35 @@ async function planFiles(env, projectDescription) {
     },
   ];
 
-  const rawPlan = await askAI(env, messages);
-  const cleanPlan = stripCodeFences(rawPlan);
+  const rawPlan = await askAI(env, messages, { max_tokens: 1500 });
+  return stripCodeFences(rawPlan);
 
+}
+
+async function planFiles(env, projectDescription) {
+
+  let cleanPlan = await requestPlan(env, projectDescription);
   let files;
 
   try {
     files = JSON.parse(cleanPlan);
   } catch {
-    throw new Error("Planner did not return valid JSON: " + cleanPlan.slice(0, 200));
+
+    // --- Self-healing retry: প্রথমবার ভুল/অসম্পূর্ণ JSON হলে একবার আবার চেষ্টা ---
+    console.log("Planner JSON parse failed, retrying once with a stricter note...");
+
+    cleanPlan = await requestPlan(
+      env,
+      projectDescription,
+      "\n\nIMPORTANT: Your previous response was not valid JSON or was cut off. Return ONLY a complete, valid, properly closed JSON array. Keep every instruction to a single short sentence so the full response fits."
+    );
+
+    try {
+      files = JSON.parse(cleanPlan);
+    } catch {
+      throw new Error("Planner did not return valid JSON after retry: " + cleanPlan.slice(0, 200));
+    }
+
   }
 
   if (!Array.isArray(files) || files.length === 0) {
