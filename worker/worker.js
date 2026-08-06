@@ -10,7 +10,7 @@ import { getSystemPrompt } from "./prompts.js";
 import { buildMessages, getHistory, saveHistory } from "./memory.js";
 import { runTools } from "./tools.js";
 import { askAI } from "./ai.js";
-import { runCodingAgent } from "./agents/coding.js";
+import { runCodingAgent, runMultiFileCodingAgent } from "./agents/coding.js";
 
 export default {
 
@@ -101,7 +101,7 @@ export default {
 
     }
 
-    // Coding Agent API
+    // Coding Agent API (single file)
     if (request.method === "POST" && url.pathname === "/api/agent/code") {
 
       try {
@@ -119,6 +119,44 @@ export default {
         }
 
         const result = await runCodingAgent(env, { path, instructions });
+
+        return json({
+          success: true,
+          ...result
+        });
+
+      } catch (err) {
+
+        return json({
+          success: false,
+          error: err.message
+        }, 500);
+
+      }
+
+    }
+
+    // Multi-file Coding Agent API
+    if (request.method === "POST" && url.pathname === "/api/agent/build") {
+
+      try {
+
+        const body = await request.json();
+
+        const projectDescription = body.projectDescription;
+        const folder = body.folder || "";
+
+        if (!projectDescription) {
+          return json({
+            success: false,
+            error: "'projectDescription' is required"
+          }, 400);
+        }
+
+        const result = await runMultiFileCodingAgent(env, {
+          projectDescription,
+          folder
+        });
 
         return json({
           success: true,
