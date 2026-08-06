@@ -10,6 +10,7 @@ import { getSystemPrompt } from "./prompts.js";
 import { buildMessages, getHistory, saveHistory } from "./memory.js";
 import { runTools } from "./tools.js";
 import { askAI } from "./ai.js";
+import { runCodingAgent } from "./agents/coding.js";
 
 export default {
 
@@ -87,6 +88,41 @@ export default {
           task,
           sessionId,
           reply
+        });
+
+      } catch (err) {
+
+        return json({
+          success: false,
+          error: err.message
+        }, 500);
+
+      }
+
+    }
+
+    // Coding Agent API
+    if (request.method === "POST" && url.pathname === "/api/agent/code") {
+
+      try {
+
+        const body = await request.json();
+
+        const path = body.path;
+        const instructions = body.instructions;
+
+        if (!path || !instructions) {
+          return json({
+            success: false,
+            error: "Both 'path' and 'instructions' are required"
+          }, 400);
+        }
+
+        const result = await runCodingAgent(env, { path, instructions });
+
+        return json({
+          success: true,
+          ...result
         });
 
       } catch (err) {
