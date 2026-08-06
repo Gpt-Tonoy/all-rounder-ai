@@ -40,3 +40,30 @@ export function selectModel(task) {
 export function selectProvider(task) {
   return "cloudflare-workers-ai";
 }
+
+// -----------------------------------------
+// Build Intent Detection
+// -----------------------------------------
+
+const BUILD_KEYWORDS = [
+  "বানাও",
+  "বানিয়ে দাও",
+  "বানিয়ে দেও",
+  "তৈরি করো",
+  "তৈরি কর",
+  "build",
+  "create an app",
+  "create a game",
+  "make an app",
+  "make a game",
+  "make me",
+  "build me",
+];
+
+export function isBuildRequest(message) {
+
+  const text = (message || "").toLowerCase();
+
+  return BUILD_KEYWORDS.some((keyword) => text.includes(keyword));
+
+}
