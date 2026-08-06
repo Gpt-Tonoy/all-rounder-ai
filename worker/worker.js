@@ -4,9 +4,9 @@
 // =========================================
 
 import { APP_NAME, VERSION } from "./config.js";
-import { CORS, json } from "./core.js";
+import { CORS, json } from "./cors.js";
 import { classifyTask } from "./router.js";
-import { getSystemPrompt } from "./prompt.js";
+import { getSystemPrompt } from "./prompts.js";
 import { buildMessages, getHistory, saveHistory } from "./memory.js";
 import { runTools } from "./tools.js";
 import { askAI } from "./ai.js";
