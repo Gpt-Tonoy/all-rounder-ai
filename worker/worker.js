@@ -5,7 +5,7 @@
 
 import { APP_NAME, VERSION } from "./config.js";
 import { CORS, json } from "./cors.js";
-import { classifyTask } from "./router.js";
+import { classifyTask, isBuildRequest } from "./router.js";
 import { getSystemPrompt } from "./prompts.js";
 import { buildMessages, getHistory, saveHistory } from "./memory.js";
 import { runTools } from "./tools.js";
@@ -48,6 +48,52 @@ export default {
         const message = body.message || "";
         const sessionId = body.sessionId || "default";
 
+        // Build Intent → route to Multi-file Coding Agent
+        if (isBuildRequest(message)) {
+
+          try {
+
+            const folder = `projects/${sessionId}-${Date.now()}`;
+
+            const buildResult = await runMultiFileCodingAgent(env, {
+              projectDescription: message,
+              folder,
+            });
+
+            const fileList = buildResult.results
+              .map((r) =>
+                r.success
+                  ? `✅ ${r.path}`
+                  : `❌ ${r.path} (${r.error})`
+              )
+              .join("\n");
+
+            const successCount = buildResult.results.filter(r => r.success).length;
+
+            const reply =
+              `আপনার প্রজেক্ট বানানো হয়েছে (${successCount}/${buildResult.results.length} ফাইল সফল):\n\n${fileList}\n\nফোল্ডার: ${folder}`;
+
+            return json({
+              success: true,
+              task: "build",
+              sessionId,
+              reply,
+              buildDetails: buildResult
+            });
+
+          } catch (err) {
+
+            return json({
+              success: true,
+              task: "build",
+              sessionId,
+              reply: `প্রজেক্ট বানাতে সমস্যা হয়েছে: ${err.message}`
+            });
+
+          }
+
+        }
+
         // Router
         const task = classifyTask(message);
 
@@ -74,7 +120,7 @@ export default {
         // AI
         const reply = await askAI(env, messages);
 
-        // Memory - save (user message + AI reply যোগ করে)
+        // Memory - save
         const updatedHistory = [
           ...history,
           { role: "user", content: message },
