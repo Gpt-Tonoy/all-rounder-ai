@@ -43,3 +43,80 @@ export async function runCodingAgent(env, { path, instructions }) {
   };
 
 }
+
+// -----------------------------------------
+// Multi-file Coding Agent
+// -----------------------------------------
+
+async function planFiles(env, projectDescription) {
+
+  const messages = [
+    {
+      role: "system",
+      content:
+        'You are a software planner. Given a project description, output ONLY a JSON array of file plans. Each item must have "path" (string, relative repo path) and "instructions" (string, detailed instructions for that specific file). No explanations, no markdown fences, just raw JSON. Keep it to 2-5 files.',
+    },
+    {
+      role: "user",
+      content: `Project: ${projectDescription}`,
+    },
+  ];
+
+  const rawPlan = await askAI(env, messages);
+  const cleanPlan = stripCodeFences(rawPlan);
+
+  let files;
+
+  try {
+    files = JSON.parse(cleanPlan);
+  } catch {
+    throw new Error("Planner did not return valid JSON: " + cleanPlan.slice(0, 200));
+  }
+
+  if (!Array.isArray(files) || files.length === 0) {
+    throw new Error("Planner returned an empty or invalid file list");
+  }
+
+  return files;
+
+}
+
+export async function runMultiFileCodingAgent(env, { projectDescription, folder }) {
+
+  const plan = await planFiles(env, projectDescription);
+
+  const results = [];
+
+  for (const file of plan) {
+
+    const fullPath = folder
+      ? `${folder}/${file.path}`.replace(/\/+/g, "/")
+      : file.path;
+
+    try {
+
+      const result = await runCodingAgent(env, {
+        path: fullPath,
+        instructions: file.instructions,
+      });
+
+      results.push({ ...result, success: true });
+
+    } catch (err) {
+
+      results.push({
+        path: fullPath,
+        success: false,
+        error: err.message,
+      });
+
+    }
+
+  }
+
+  return {
+    plan,
+    results,
+  };
+
+        }
