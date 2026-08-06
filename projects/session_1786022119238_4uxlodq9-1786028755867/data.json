@@ -1,0 +1,49 @@
+{
+  "title": "Project Title",
+  "description": "A brief description of the project",
+  "startDate": "2021-09-01",
+  "endDate": "2021-09-30",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Task 1",
+      "status": "in_progress",
+      "priority": "high",
+      "dueDate": "2021-09-15"
+    },
+    {
+      "id": 2,
+      "name": "Task 2",
+      "status": "completed",
+      "priority": "low",
+      "dueDate": "2021-09-20"
+    },
+    {
+      "id": 3,
+      "name": "Task 3",
+      "status": "in_progress",
+      "priority": "medium",
+      "dueDate": "2021-09-22"
+    }
+  ],
+  "team": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "role": "Developer",
+      "email": "johndoe@example.com"
+    },
+    {
+      "id": 2,
+      "name": "Jane Doe",
+      "role": "Designer",
+      "email": "janedoe@example.com"
+    },
+    {
+      "id": 3,
+      "name": "Bob Smith",
+      "role": "Project Manager",
+      "email": "bobsmith@example.com"
+    }
+  ]
+}
