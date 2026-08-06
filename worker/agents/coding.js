@@ -54,7 +54,7 @@ async function planFiles(env, projectDescription) {
     {
       role: "system",
       content:
-        'You are a software planner. Given a project description, output ONLY a JSON array of file plans. Each item must have "path" (string, relative repo path) and "instructions" (string, detailed instructions for that specific file). No explanations, no markdown fences, just raw JSON. Keep it to 2-5 files.',
+        'You are a software planner. Given a project description, output ONLY a JSON array of file plans. Each item must have "path" (string, relative repo path) and "instructions" (string, detailed instructions for that specific file). ONLY plan text-based code files (.html, .css, .js, .json, .md). NEVER plan binary/image files (.png, .jpg, .ico, .svg, .gif, .mp3, .wav) — if icons or graphics are needed, instruct the file to use CSS shapes, unicode/emoji characters, or inline SVG markup instead. No explanations, no markdown fences, just raw JSON. Keep it to 2-5 files.',
     },
     {
       role: "user",
@@ -119,4 +119,4 @@ export async function runMultiFileCodingAgent(env, { projectDescription, folder 
     results,
   };
 
-        }
+}
