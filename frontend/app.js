@@ -3,12 +3,21 @@
 // GitHub Pages → Cloudflare Worker → Workers AI
 // ---------------------------------------------------------
 
-// Cloudflare Worker API
-const API_BASE_URL =
-  "https://all-rounder-ai-v2.tonoygpt.workers.dev";
+const API_BASE_URL = "https://all-rounder-ai-v3.tonoygpt.workers.dev";
 
-// Session chat history
-let chatHistory = [];
+// প্রতি ব্রাউজারের জন্য একটা ইউনিক sessionId - localStorage এ সেভ থাকে
+function getSessionId() {
+  let sessionId = localStorage.getItem("allrounder_session_id");
+
+  if (!sessionId) {
+    sessionId = "session_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("allrounder_session_id", sessionId);
+  }
+
+  return sessionId;
+}
+
+const sessionId = getSessionId();
 
 // DOM Elements
 const chatArea = document.getElementById("chatArea");
@@ -38,7 +47,6 @@ function addMessage(text, sender) {
 // --------------------------------------------
 function setLoading(isLoading) {
   loadingIndicator.classList.toggle("active", isLoading);
-
   sendButton.disabled = isLoading;
   messageInput.disabled = isLoading;
 }
@@ -54,74 +62,40 @@ async function sendMessage() {
   if (sendButton.disabled) return;
 
   addMessage(text, "user");
-
   messageInput.value = "";
-
   setLoading(true);
 
   try {
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/chat`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          message: text,
-          history: chatHistory
-        })
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: text,
+        sessionId: sessionId
+      })
+    });
 
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Server Error"
-      );
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Server Error");
     }
 
-    const aiText =
-      data.message ||
-      "No response received.";
-
-    // Save conversation
-    chatHistory.push({
-      role: "user",
-      content: text
-    });
-
-    chatHistory.push({
-      role: "assistant",
-      content: aiText
-    });
-
-    // Keep only last 20 messages
-    if (chatHistory.length > 20) {
-      chatHistory =
-        chatHistory.slice(-20);
-    }
+    const aiText = data.reply || "No response received.";
 
     addMessage(aiText, "ai");
 
   } catch (err) {
 
     console.error(err);
-
-    addMessage(
-      "⚠️ AI request failed. Please try again.",
-      "ai"
-    );
+    addMessage("⚠️ AI request failed. Please try again.", "ai");
 
   } finally {
 
     setLoading(false);
-
     messageInput.focus();
 
   }
@@ -131,36 +105,14 @@ async function sendMessage() {
 // --------------------------------------------
 // Send Button
 // --------------------------------------------
-sendButton.addEventListener(
-  "click",
-  sendMessage
-);
+sendButton.addEventListener("click", sendMessage);
 
 // --------------------------------------------
 // Enter Key
 // --------------------------------------------
-messageInput.addEventListener(
-  "keydown",
-  (event) => {
-
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-
-      event.preventDefault();
-
-      sendMessage();
-
-    }
-
+messageInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
   }
-);
-
-// --------------------------------------------
-// Welcome Message
-// --------------------------------------------
-addMessage(
-  "Hi! I'm All-Rounder AI. Ask me anything to test the connection.",
-  "ai"
-);
+});
