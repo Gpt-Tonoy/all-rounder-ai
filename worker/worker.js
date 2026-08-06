@@ -4,10 +4,10 @@
 // =========================================
 
 import { APP_NAME, VERSION } from "./config.js";
-import { CORS, json } from "./cors.js";
+import { CORS, json } from "./core.js";
 import { classifyTask } from "./router.js";
-import { getSystemPrompt } from "./prompts.js";
-import { buildMessages } from "./memory.js";
+import { getSystemPrompt } from "./prompt.js";
+import { buildMessages, getHistory, saveHistory } from "./memory.js";
 import { runTools } from "./tools.js";
 import { askAI } from "./ai.js";
 
@@ -45,6 +45,7 @@ export default {
         const body = await request.json();
 
         const message = body.message || "";
+        const sessionId = body.sessionId || "default";
 
         // Router
         const task = classifyTask(message);
@@ -63,15 +64,28 @@ export default {
           });
         }
 
-        // Memory
-        const messages = buildMessages(systemPrompt, message);
+        // Memory - load
+        const history = await getHistory(env, sessionId);
+
+        // Build messages with history
+        const messages = buildMessages(systemPrompt, message, history);
 
         // AI
         const reply = await askAI(env, messages);
 
+        // Memory - save (user message + AI reply যোগ করে)
+        const updatedHistory = [
+          ...history,
+          { role: "user", content: message },
+          { role: "assistant", content: reply },
+        ];
+
+        await saveHistory(env, sessionId, updatedHistory);
+
         return json({
           success: true,
           task,
+          sessionId,
           reply
         });
 
