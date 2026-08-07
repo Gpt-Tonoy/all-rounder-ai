@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul li {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+ul li:last-child {
+    border-bottom: none;
+}
+
+ul li a {
+    text-decoration: none;
+    color: #337ab7;
+}
+
+ul li a:hover {
+    color: #23527c;
+}
+
+ul li a:focus {
+    color: #23527c;
+}
+
+ul li a:active {
+    color: #23527c;
+}
+
+ul li a:visited {
+    color: #337ab7;
+}
